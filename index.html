@@ -29,16 +29,53 @@
             transition:background 0.2s;
         }
         .handle-item:hover { background:#f7f9fa; }
-        .handle-item.active { background:#1da1f2; color:white; }
-        .handle-avatar { 
-            width:48px; height:48px; background:#1da1f2; border-radius:50%; 
-            display:flex; align-items:center; justify-content:center; color:white; 
-            font-weight:600; font-size:18px; margin-right:16px;
+        
+        /* Active state */
+        .handle-item.active { 
+            background:#1da1f2 !important;
+            color:white !important;
         }
+        .handle-item.active .handle-link { 
+            color:rgba(255,255,255,0.9) !important; 
+        }
+        
+        /* Favorite styling */
+        .handle-item.favorite {
+            border-left: 4px solid #ffcc00;
+            background: linear-gradient(90deg, rgba(255,204,0,0.08) 0%, transparent 20px);
+        }
+        .handle-item.favorite .handle-name {
+            font-weight: 700;
+        }
+        
+        /* Active + Favorite combo */
+        .handle-item.active.favorite {
+            background: linear-gradient(90deg, #1da1f2 0%, rgba(255,204,0,0.2) 100%) !important;
+        }
+        .handle-item.active.favorite,
+        .handle-item.active.favorite .handle-name,
+        .handle-item.active.favorite .handle-link {
+            color: #fff !important;
+        }
+        
         .handle-info { flex:1; }
         .handle-name { font-weight:600; font-size:16px; margin-bottom:4px; }
         .handle-link { color:#657786; font-size:14px; }
-        .handle-item.active .handle-link { color:rgba(255,255,255,0.9); }
+        
+        /* AVATARS - FIXED & LAST */
+        .handle-avatar { 
+            width:48px; height:48px; border-radius:50%; 
+            display:flex; align-items:center; justify-content:center; 
+            font-weight:600; font-size:18px; margin-right:16px;
+            color:white;
+            background:#1da1f2;  /* ✅ DEFAULT BLUE */
+        }
+        .handle-item.favorite .handle-avatar {
+            background: #ffcc00 !important;
+            box-shadow: 0 0 0 2px rgba(255,204,0,0.3);
+            color: #333 !important;
+        }
+        
         .loading { text-align:center; padding:60px 20px; color:#657786; }
         .error { text-align:center; padding:60px 20px; color:#e24; background:#fee; border-radius:12px; margin:20px; }
         @media (max-width:768px) { 
@@ -47,6 +84,8 @@
             .main { height:70vh; }
         }
     </style>
+
+
 </head>
 <body>
     <div class="app">
@@ -66,37 +105,70 @@
 
     <script>
         const NITTER_INSTANCE = 'https://nitter.net';
-        let isSorted = false;  // Track sort state
+        let isSorted = false;
         
         async function loadHandles() {
             try {
                 const response = await fetch('handles.json');
-                let handles = await response.json();
+                const rawData = await response.json();
+                
+                console.log('Raw JSON:', rawData.slice(0, 3)); // Debug first 3
+                
+                // SANITIZE: Filter valid accounts only
+                let accounts = rawData.filter(item => 
+                    item && 
+                    typeof item === 'object' && 
+                    item.handle && 
+                    typeof item.handle === 'string' && 
+                    item.handle.length > 0
+                ).map(item => ({
+                    handle: item.handle,
+                    name: item.name || '',
+                    favorite: Boolean(item.favorite)
+                }));
+                
+                console.log('Valid accounts:', accounts.length); // Debug
+                
+                if (accounts.length === 0) {
+                    throw new Error('No valid accounts found');
+                }
                 
                 const sidebar = document.getElementById('handles-list');
                 const countEl = document.getElementById('handle-count');
                 
-                // Add sort button to header
                 countEl.innerHTML = `
-                    <span>${handles.length} accounts • via Nitter</span>
-                    <button id="sort-btn" style="float:right;background:none;border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;margin-left:10px;">
+                    <span>${accounts.length} accounts • via Nitter</span>
+                    <button id="sort-btn" style="float:right;background:none;border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;">
                         🔤 A-Z
                     </button>
                 `;
                 
-                function renderHandles(sorted = false) {
-                    let displayHandles = sorted ? [...handles].sort() : handles;
+                function renderAccounts(sorted = false) {
+                    let displayAccounts = [...accounts];
                     
-                    sidebar.innerHTML = displayHandles.map(handle => `
-                        <div class="handle-item" data-handle="${handle}">
-                            <div class="handle-avatar">${handle.charAt(0).toUpperCase()}</div>
-                            <div class="handle-info">
-                                <div class="handle-name">@${handle}</div>
+                    if (sorted) {
+                        displayAccounts.sort((a, b) => 
+                            (a.name || `@${a.handle}`).localeCompare(b.name || `@${b.handle}`)
+                        );
+                    } else {
+                        displayAccounts.sort((a, b) => Number(b.favorite) - Number(a.favorite));
+                    }
+                    
+                    sidebar.innerHTML = displayAccounts.map(account => {
+                        const displayName = account.name || `@${account.handle}`;
+                        const avatarChar = (account.name || account.handle).charAt(0).toUpperCase();
+                        
+                        return `
+                            <div class="handle-item ${account.favorite ? 'favorite' : ''}" data-handle="${account.handle}">
+                                <div class="handle-avatar">${avatarChar}</div>
+                                <div class="handle-info">
+                                    <div class="handle-name">${displayName}</div>
+                                    <div class="handle-link">@${account.handle} ${account.favorite ? '⭐' : ''}</div>
+                                </div>
                             </div>
-                        </div>
-                    `).join('');
+                        `;
+                    }).join('');
                     
-                    // Add click handlers
                     document.querySelectorAll('.handle-item').forEach(item => {
                         item.addEventListener('click', function() {
                             document.querySelectorAll('.handle-item').forEach(i => i.classList.remove('active'));
@@ -105,7 +177,6 @@
                         });
                     });
                     
-                    // Update sort button
                     const sortBtn = document.getElementById('sort-btn');
                     sortBtn.textContent = sorted ? '🔤 Original' : '🔤 A-Z';
                     sortBtn.onclick = () => toggleSort();
@@ -113,22 +184,18 @@
                 
                 function toggleSort() {
                     isSorted = !isSorted;
-                    renderHandles(isSorted);
+                    renderAccounts(isSorted);
                 }
                 
-                // Initial render (unsorted)
-                renderHandles(false);
-                
-                // Auto-load first handle
-                if (handles.length > 0) {
-                    setTimeout(() => document.querySelector('.handle-item')?.click(), 100);
-                }
+                renderAccounts(false);
+                setTimeout(() => document.querySelector('.handle-item')?.click(), 300);
                 
             } catch (error) {
+                console.error('Full error:', error);
                 document.getElementById('handles-list').innerHTML = `
                     <div class="error">
-                        <strong>handles.json not found</strong><br>
-                        Create handles.json with: <pre>["nasa", "xai"]</pre>
+                        <strong>JSON Load Failed</strong><br>
+                        <small>F12 Console shows details. Try: echo '[{{"handle":"test"}}]' > handles.json</small>
                     </div>
                 `;
             }
@@ -136,6 +203,10 @@
         
         document.addEventListener('DOMContentLoaded', loadHandles);
     </script>
+
+
+
+
 
 </body>
 </html>
