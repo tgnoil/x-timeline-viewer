@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>📱 X Timeline (Nitter)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <style>
+        * { box-sizing:border-box; }
+        body { 
+            font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; 
+            margin:0; padding:0; height:100vh; background:#f7f9fa; overflow:hidden;
+        }
+        .app { display:flex; height:100vh; }
+        .sidebar { 
+            width:320px; background:white; box-shadow:2px 0 12px rgba(0,0,0,0.1); overflow-y:auto; 
+            border-right:1px solid #e1e8ed;
+        }
+        .main { flex:1; position:relative; }
+        .iframe-container { 
+            position:absolute; top:0; left:0; right:0; bottom:0; background:#f7f9fa;
+        }
+        .iframe { width:100%; height:100%; border:none; background:white; }
+        .header { 
+            background:#1da1f2; color:white; padding:20px; text-align:center; 
+            position:sticky; top:0; z-index:10;
+        }
+        .handle-item { 
+            display:flex; padding:16px 20px; cursor:pointer; border-bottom:1px solid #e1e8ed;
+            transition:background 0.2s;
+        }
+        .handle-item:hover { background:#f7f9fa; }
+        .handle-item.active { background:#1da1f2; color:white; }
+        .handle-avatar { 
+            width:48px; height:48px; background:#1da1f2; border-radius:50%; 
+            display:flex; align-items:center; justify-content:center; color:white; 
+            font-weight:600; font-size:18px; margin-right:16px;
+        }
+        .handle-info { flex:1; }
+        .handle-name { font-weight:600; font-size:16px; margin-bottom:4px; }
+        .handle-link { color:#657786; font-size:14px; }
+        .handle-item.active .handle-link { color:rgba(255,255,255,0.9); }
+        .loading { text-align:center; padding:60px 20px; color:#657786; }
+        .error { text-align:center; padding:60px 20px; color:#e24; background:#fee; border-radius:12px; margin:20px; }
+        @media (max-width:768px) { 
+            .sidebar { width:280px; } 
+            .app { flex-direction:column; } 
+            .main { height:70vh; }
+        }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="sidebar">
+            <div class="header">
+                <h2 style="margin:0;font-size:20px;">📱 X Timeline</h2>
+                <div id="handle-count" style="font-size:14px;margin-top:4px;opacity:0.9;">Loading...</div>
+            </div>
+            <div id="handles-list" class="loading">Loading handles...</div>
+        </div>
+        <div class="main">
+            <div class="iframe-container">
+                <iframe id="nitter-frame" class="iframe" src="about:blank"></iframe>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const NITTER_INSTANCE = 'https://nitter.net';
+        let isSorted = false;  // Track sort state
+        
+        async function loadHandles() {
+            try {
+                const response = await fetch('handles.json');
+                let handles = await response.json();
+                
+                const sidebar = document.getElementById('handles-list');
+                const countEl = document.getElementById('handle-count');
+                
+                // Add sort button to header
+                countEl.innerHTML = `
+                    <span>${handles.length} accounts • via Nitter</span>
+                    <button id="sort-btn" style="float:right;background:none;border:1px solid rgba(255,255,255,0.3);color:white;padding:4px 8px;border-radius:4px;font-size:12px;cursor:pointer;margin-left:10px;">
+                        🔤 A-Z
+                    </button>
+                `;
+                
+                function renderHandles(sorted = false) {
+                    let displayHandles = sorted ? [...handles].sort() : handles;
+                    
+                    sidebar.innerHTML = displayHandles.map(handle => `
+                        <div class="handle-item" data-handle="${handle}">
+                            <div class="handle-avatar">${handle.charAt(0).toUpperCase()}</div>
+                            <div class="handle-info">
+                                <div class="handle-name">@${handle}</div>
+                            </div>
+                        </div>
+                    `).join('');
+                    
+                    // Add click handlers
+                    document.querySelectorAll('.handle-item').forEach(item => {
+                        item.addEventListener('click', function() {
+                            document.querySelectorAll('.handle-item').forEach(i => i.classList.remove('active'));
+                            this.classList.add('active');
+                            document.getElementById('nitter-frame').src = `${NITTER_INSTANCE}/${this.dataset.handle}`;
+                        });
+                    });
+                    
+                    // Update sort button
+                    const sortBtn = document.getElementById('sort-btn');
+                    sortBtn.textContent = sorted ? '🔤 Original' : '🔤 A-Z';
+                    sortBtn.onclick = () => toggleSort();
+                }
+                
+                function toggleSort() {
+                    isSorted = !isSorted;
+                    renderHandles(isSorted);
+                }
+                
+                // Initial render (unsorted)
+                renderHandles(false);
+                
+                // Auto-load first handle
+                if (handles.length > 0) {
+                    setTimeout(() => document.querySelector('.handle-item')?.click(), 100);
+                }
+                
+            } catch (error) {
+                document.getElementById('handles-list').innerHTML = `
+                    <div class="error">
+                        <strong>handles.json not found</strong><br>
+                        Create handles.json with: <pre>["nasa", "xai"]</pre>
+                    </div>
+                `;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', loadHandles);
+    </script>
+
+</body>
+</html>
