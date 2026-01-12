@@ -1,10 +1,10 @@
-# Nitter Handle Viewer
+# X Timeline Viewer
 
 A clean, fast Twitter/X viewer using Nitter instances. No login required.
 
 ## ✨ Features
 
-- **52+ accounts** loaded from `handles.json`
+- Accounts loaded from `handles.json`
 - **⭐ Favorites first** – pinned accounts appear at top
 - **A-Z sort toggle** – alphabetical browsing
 - **Click to view** – instant profile loading
