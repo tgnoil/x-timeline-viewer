@@ -32,16 +32,6 @@ A clean, fast Twitter/X viewer using Nitter instances. No login required.
     npx serve .
     ```
 
-## 🎨 Customization
-
-- **Favorites** (gold highlight, top position):
-
-    ```json
-    {"handle": "username", "name": "Display Name", "favorite": true}
-    ```
-
-- **Sort toggle**: Click "🔤 A-Z" button in header
-
 ## 🔧 Troubleshooting
 
 - **No accounts load?** Check F12 Console for JSON errors
@@ -51,11 +41,6 @@ A clean, fast Twitter/X viewer using Nitter instances. No login required.
     ```bash
     echo '[{"handle":"test"}]' > handles.json
     ```
-
-## 📱 Screenshots
-
-- **Desktop**: Clean sidebar → full-width Nitter profile
-- **Mobile**: Stacked layout, touch-friendly
 
 ## ❤️ Made With
 
