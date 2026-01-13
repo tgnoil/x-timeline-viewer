@@ -78,11 +78,22 @@
         
         .loading { text-align:center; padding:60px 20px; color:#657786; }
         .error { text-align:center; padding:60px 20px; color:#e24; background:#fee; border-radius:12px; margin:20px; }
-        @media (max-width:768px) { 
-            .sidebar { width:280px; } 
-            .app { flex-direction:column; } 
-            .main { height:70vh; }
+        @media (max-width: 768px) {
+        .app {
+            flex-direction: column;
         }
+        .sidebar {
+            width: 100%;
+            height: 40vh;
+            border-right: none;
+            border-bottom: 1px solid #e1e8ed;
+        }
+        .main {
+            flex: 1;
+            height: 60vh;
+        }
+        }
+
     </style>
 
 
@@ -91,8 +102,10 @@
     <div class="app">
         <div class="sidebar">
             <div class="header">
-                <h2 style="margin:0;font-size:20px;">📱 X Timeline</h2>
+                <h2 style="margin:0;font-size:20px;">📱 <a href="https://github.com/tgnoil/x-timeline-viewer/" target="_blank" style="color:white; text-decoration:underline">X Timeline Viewer</a></h2>
                 <div id="handle-count" style="font-size:14px;margin-top:4px;opacity:0.9;">Loading...</div>
+                
+
             </div>
             <div id="handles-list" class="loading">Loading handles...</div>
         </div>
